@@ -1,13 +1,9 @@
 package com.example.demo.domain;
 
-import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "user")
@@ -18,32 +14,23 @@ public class User {
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id")
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name="UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    private String id;
 
-    @NotBlank
-    @Size(max = 40)
+    @Column(name="name", nullable = false, unique=true)
     private String name;
 
-    @NotBlank
-    @Size(max = 15)
-    private String username;
-
-    @NaturalId
-    @NotBlank
-    @Size(max = 40)
+    @Column(name="email", unique=true)
     @Email
     private String email;
 
-    @NotBlank
-    @Size(max = 100)
-    private String password;
+    @Column(name="user_image_url")
+    private String imageUrl;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles = new HashSet<>();
+    @Column(name="admin_flag", nullable = false)
+    private Boolean adminFlag;
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
@@ -57,31 +44,27 @@ public class User {
 
     }
 
-    public User(String name, String username, String email, String password) {
+
+    public User(String name, @Email String email, Boolean adminFlag) {
         this.name = name;
-        this.username = username;
         this.email = email;
-        this.password = password;
+        this.adminFlag = adminFlag;
+    }
+
+    public User(@Email String email) {
+        this.email = email;
     }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Getter & Setter Method ( DI Method )
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getName() {
@@ -100,20 +83,20 @@ public class User {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
-    public Set<Role> getRoles() {
-        return roles;
+    public Boolean getAdminFlag() {
+        return adminFlag;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setAdminFlag(Boolean adminFlag) {
+        this.adminFlag = adminFlag;
     }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

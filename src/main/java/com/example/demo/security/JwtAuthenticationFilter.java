@@ -63,9 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
             // 있다면 토큰 유효성 체크
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                Long userId = tokenProvider.getUserIdFromJWT(jwt);
+                // 토큰에서 이메일 정보 추출
+                String email = tokenProvider.getUserEmailFromJWT(jwt);
 
-                UserDetails userDetails = customUserDetailsService.loadUserById(userId);
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
@@ -83,7 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     /**
-     * 토큰을 가지고 있는지 확인
+     * Header에 토큰을 가지고 있는지 확인
      * @param request
      * @return
      */

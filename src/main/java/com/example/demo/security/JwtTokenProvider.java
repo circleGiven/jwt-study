@@ -1,5 +1,6 @@
 package com.example.demo.security;
 
+import com.example.demo.domain.User;
 import io.jsonwebtoken.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.Map;
 
 @Component
 public class JwtTokenProvider {
@@ -46,34 +48,116 @@ public class JwtTokenProvider {
      */
     public String generateToken(Authentication authentication) {
 
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        String userEmail = (String) authentication.getPrincipal();
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
+        Claims claim = Jwts.claims();
+//        claim.put("name", "test");
+        claim.put("email", userEmail);
+//        claim.put("token", userEmail);
+
+
         return Jwts.builder()
                 // JWT token에 내려줄 user 정보 설정
-                .setSubject(userPrincipal.getEmail())
+                .setClaims(claim)
+//                .setSubject(userEmail)
                 // token이 발급된 시간
                 .setIssuedAt(new Date())
                 // token 만료시간 설정
+                // 만료시간 을 길게잡도록
+                // 만료됬을경우 재발행을 하는지 로그인을 받는지 올바른 방법을 찾기
+                // 만약 특정 exception을 캐치하도록 찾아보기
+
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }
 
     /**
-     * 토큰에서 사용자 아이디 조회
+     * 토큰 생성
+     * @param user
+     * @param google_token
+     * @param google_refresh_token
+     * @return
+     */
+    public String createJWTToken(User user, String google_token, String google_refresh_token) {
+        // 현재 시간
+        Date now = new Date();
+        // 만료시간
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        // 토큰 정보
+        Claims claims = Jwts.claims();
+        claims.put("email", user.getEmail());
+        claims.put("name", user.getName());
+        claims.put("admin", user.getAdminFlag());
+        claims.put("google_token", google_token);
+        claims.put("google_refresh_token", google_refresh_token);
+
+        return Jwts.builder()
+                // JWT token에 내려줄 정보 설정
+                .setClaims(claims)
+                // token이 발급된 시간
+                .setIssuedAt(new Date())
+                // token 만료시간
+                .setExpiration(expiryDate)
+                // token 암호화
+                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .compact();
+    }
+
+
+    /**
+     * 토큰에서 사용자 이름 조회
      * @param token
      * @return
      */
-    public Long getUserIdFromJWT(String token) {
+    public String getUserNameFromJWT(String token) {
         Claims claims = Jwts.parser()
                 .setSigningKey(jwtSecret)
                 .parseClaimsJws(token)
                 .getBody();
+        return (String) claims.get("name");
+    }
 
-        return Long.parseLong(claims.getSubject());
+    /**
+     * 토큰에서 사용자 이메일 조회
+     * @param token
+     * @return
+     */
+    public String getUserEmailFromJWT(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(jwtSecret)
+                .parseClaimsJws(token)
+                .getBody();
+        return (String) claims.get("email");
+    }
+
+    /**
+     * 토큰에서 구글 토큰 조회
+     * @param token
+     * @return
+     */
+    public String getGoogleTokenFromJWT(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(jwtSecret)
+                .parseClaimsJws(token)
+                .getBody();
+        return (String) claims.get("google_token");
+    }
+
+    /**
+     * 토큰에서 구글 리프래시 토큰 조
+     * @param token
+     * @return
+     */
+    public String getGoogleRefreshTokenFromJWT(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(jwtSecret)
+                .parseClaimsJws(token)
+                .getBody();
+        return (String) claims.get("google_refresh_token");
     }
 
     /**

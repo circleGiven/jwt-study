@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.example.demo.security.CustomAuthenticationProvider;
 import com.example.demo.security.CustomUserDetailsService;
 import com.example.demo.security.JwtAuthenticationEntryPoint;
 import com.example.demo.security.JwtAuthenticationFilter;
@@ -33,6 +34,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
+
+    @Autowired
+    CustomAuthenticationProvider provider;
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
@@ -75,8 +79,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
         authenticationManagerBuilder
-                .userDetailsService(customUserDetailsService)
-                .passwordEncoder(passwordEncoder());
+                .authenticationProvider(provider);
+//                .userDetailsService(customUserDetailsService);
+//                .passwordEncoder(passwordEncoder());
     }
 
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
@@ -110,8 +115,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/**/*.js")
                 .permitAll()
                 .antMatchers("/api/auth/**")
-                .permitAll()
-                .antMatchers("/api/user/checkUsernameAvailability", "/api/user/checkEmailAvailability")
                 .permitAll()
                 .anyRequest()
                 .authenticated();

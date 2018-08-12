@@ -17,19 +17,14 @@ public class UserPrincipal implements UserDetails {
     | Private Variables
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    private Long id;
+    private String id;
 
     private String name;
-
-    private String username;
 
     @JsonIgnore
     private String email;
 
-    @JsonIgnore
-    private String password;
-
-    private Collection<? extends GrantedAuthority> authorities;
+    private Boolean adminFlag;
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
@@ -39,20 +34,18 @@ public class UserPrincipal implements UserDetails {
     | Constructor
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    public UserPrincipal(Long id, String name, String username, String email, String password, Collection<? extends GrantedAuthority> authorities) {
+    public UserPrincipal(String id, String name, String email, Boolean adminFlag) {
         this.id = id;
         this.name = name;
-        this.username = username;
         this.email = email;
-        this.password = password;
-        this.authorities = authorities;
+        this.adminFlag = adminFlag;
     }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Getter & Setter Method ( DI Method )
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -69,17 +62,12 @@ public class UserPrincipal implements UserDetails {
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     public static UserPrincipal create(User user) {
-        List<GrantedAuthority> authorities = user.getRoles().stream().map(role ->
-                new SimpleGrantedAuthority(role.getName().name())
-        ).collect(Collectors.toList());
 
         return new UserPrincipal(
                 user.getId(),
                 user.getName(),
-                user.getUsername(),
                 user.getEmail(),
-                user.getPassword(),
-                authorities
+                user.getAdminFlag()
         );
     }
 
@@ -93,17 +81,17 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public String getUsername() {
-        return username;
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
+        return name;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
+        return null;
+    }
+
+    @Override
+    public String getPassword() {
+        return email;
     }
 
     @Override

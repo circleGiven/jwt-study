@@ -38,20 +38,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     | Public Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    /**
-     * JWTAuthenticationFilter에서 사용하는 메서드
-     * @param id
-     * @return
-     */
-    @Transactional
-    public UserDetails loadUserById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(
-                () -> new UsernameNotFoundException("User not found with id : " + id)
-        );
-
-        return UserPrincipal.create(user);
-    }
-
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Implement Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
@@ -61,7 +47,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     /**
-     * 사용자 이름 또는 이메일로 해당 사용자가 유효한지 조회
+     * 사용자 이메일로 해당 사용자가 유효한지 조회
      * @param usernameOrEmail
      * @return
      * @throws UsernameNotFoundException
@@ -70,14 +56,19 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String usernameOrEmail)
             throws UsernameNotFoundException {
+        User user = null;
         // Let people login with either username or email
-        User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with username or email : " + usernameOrEmail)
-                );
+        try {
+            user = userRepository.findByEmail(usernameOrEmail);
+        } catch (Exception e) {
+            throw new UsernameNotFoundException("User not found with username or email : " + usernameOrEmail);
+        }
+
 
         return UserPrincipal.create(user);
     }
+
+
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | private Method
