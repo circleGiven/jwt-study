@@ -1,9 +1,6 @@
 package com.example.demo.config;
 
-import com.example.demo.security.CustomAuthenticationProvider;
-import com.example.demo.security.CustomUserDetailsService;
-import com.example.demo.security.JwtAuthenticationEntryPoint;
-import com.example.demo.security.JwtAuthenticationFilter;
+import com.example.demo.security.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +35,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     CustomAuthenticationProvider provider;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
@@ -54,9 +54,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     | Public Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter();
+    public JwtConfig securityConfigurerAdapter() {
+        return new JwtConfig(jwtTokenProvider);
     }
 
     /**
@@ -112,17 +111,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/**/*.jpg",
                         "/**/*.html",
                         "/**/*.css",
-                        "/**/*.js")
-                .permitAll()
-                .antMatchers("/api/auth/**")
-                .permitAll()
-                .antMatchers("/api/**", "/swagger/**", "/api-docs/**")
-                .permitAll()
-                .anyRequest()
-                .authenticated();
-
-        // Add our custom JWT security filter
-        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                        "/**/*.js").permitAll()
+                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/swagger/**", "/api-docs/**").permitAll()
+        .and()
+            .apply(securityConfigurerAdapter());
     }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

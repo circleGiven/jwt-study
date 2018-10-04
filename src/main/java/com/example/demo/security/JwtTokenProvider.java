@@ -4,11 +4,18 @@ import com.example.demo.domain.User;
 import io.jsonwebtoken.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -40,6 +47,11 @@ public class JwtTokenProvider {
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+
+    @PostConstruct
+    public void init() {
+
+    }
 
     /**
      * 토큰 생성
@@ -73,6 +85,20 @@ public class JwtTokenProvider {
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
+    }
+
+    public Authentication getAuthentication(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(jwtSecret)
+                .parseClaimsJws(token)
+                .getBody();
+
+        Collection<? extends GrantedAuthority> authorities =
+                Arrays.stream(claims.get("auth").toString().split(","))
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+        User principal = new User();
+        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
     }
 
     /**
