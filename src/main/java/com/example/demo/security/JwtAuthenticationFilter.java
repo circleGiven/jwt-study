@@ -61,6 +61,21 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         String jwt = resolveToken(httpServletRequest);
+        // 토큰을 가지고있고 validation을 통과한다면
+        if (StringUtils.hasText(jwt)) {
+            // token에서 userEmail 빼오기
+            String userEmail = tokenProvider.getUserEmailFromJWT(jwt);
+            // 유저가 존재 email이 정상적으로 뽑아져 있다면
+            if (userEmail != null) {
+                Authentication authentication = tokenProvider.getAuthentication(jwt);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+
+            }
+        } else {
+
+        }
+
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
             Authentication authentication = tokenProvider.getAuthentication(jwt);
             SecurityContextHolder.getContext().setAuthentication(authentication);
