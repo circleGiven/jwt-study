@@ -51,10 +51,6 @@ public class User {
         this.adminFlag = adminFlag;
     }
 
-    public User(@Email String email) {
-        this.email = email;
-    }
-
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Getter & Setter Method ( DI Method )
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
