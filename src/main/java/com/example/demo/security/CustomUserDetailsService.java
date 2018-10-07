@@ -48,24 +48,21 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     /**
      * 사용자 이메일로 해당 사용자가 유효한지 조회
-     * @param usernameOrEmail
+     * @param userId
      * @return
      * @throws UsernameNotFoundException
      */
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String usernameOrEmail)
+    public UserDetails loadUserByUsername(String userId)
             throws UsernameNotFoundException {
-        User user = null;
-        // Let people login with either username or email
-        try {
-            user = userRepository.findByEmail(usernameOrEmail);
-        } catch (Exception e) {
-            throw new UsernameNotFoundException("User not found with username or email : " + usernameOrEmail);
+        User user = userRepository.findById(userId);
+
+        if (user == null) {
+            throw new UsernameNotFoundException(String.format("No user found with userId '%s'.", userId));
+        } else {
+            return JwtUserFactory.create(user);
         }
-
-
-        return UserPrincipal.create(user);
     }
 
 
