@@ -1,30 +1,15 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.User;
-import com.example.demo.exception.AppException;
-import com.example.demo.payload.ApiResponse;
 import com.example.demo.payload.JwtAuthenticationResponse;
-import com.example.demo.payload.LoginRequest;
-import com.example.demo.payload.SignUpRequest;
+import com.example.demo.payload.Result;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.security.JwtTokenProvider;
+import com.example.demo.security.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import javax.validation.Valid;
 import java.net.URI;
-import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,13 +20,10 @@ public class AuthController {
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private JwtTokenProvider tokenProvider;
+    private JwtTokenUtil tokenUtil;
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
@@ -61,48 +43,61 @@ public class AuthController {
 
     /**
      * 로그인
-     * @param loginRequest
+     * @param email
      * @return
      */
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getName());
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        String jwt = tokenProvider.generateToken(authentication);
+    public ResponseEntity<?> authenticateUser(@RequestParam(value = "email") String email) {
+        String jwt = tokenUtil.generateToken(email);
         return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
     }
 
     /**
      * 회원가입
-     * @param signUpRequest
+     * @param name
+     * @param email
+     * @param adminFlag
      * @return
      */
-    @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignUpRequest user) {
-        if(userRepository.existsByName(user.getName())) {
-            return new ResponseEntity(new ApiResponse(false, "Username is already taken!"),
-                    HttpStatus.BAD_REQUEST);
+//    @PostMapping("/signup")
+//    public Result registerUser(
+//            @RequestParam(value = "name") String name,
+//            @RequestParam(value = "email") String email,
+//            @RequestParam(value = "adminFlag") Boolean adminFlag) {
+//
+//        // Creating user's account
+//        User temp = new User(name, email, adminFlag);
+//        User result = userRepository.save(temp);
+//
+//        URI location = ServletUriComponentsBuilder
+//                .fromCurrentContextPath().path("/api/users/{name}")
+//                .buildAndExpand(result.getName()).toUri();
+//
+//        return ResponseEntity.created(location).body(new ApiResponse(true, "User registered successfully"));
+//    }
+
+    /**
+     * 토큰 재발급
+     * @param authorization
+     * @return
+     */
+    @GetMapping("/refresh")
+    public String getRefreshToken(@RequestHeader(value = "Authorization", required = true) String authorization,
+                                  @RequestParam(value = "refresh_token") String refreshToken) {
+        String userEmail = null;
+        // token
+        String token = tokenUtil.getJwtFromToken(authorization);
+        try {
+            userEmail = tokenUtil.getUserEmailFromJWT(token);
+        } catch (Exception e) {
+
+        } finally {
+            if (null != userEmail) {
+                return tokenUtil.generateToken(userEmail);
+            } else {
+                return null;
+            }
         }
-
-        if(userRepository.existsByEmail(user.getEmail())) {
-            return new ResponseEntity(new ApiResponse(false, "Email Address already in use!"),
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        // Creating user's account
-        User temp = new User(user.getName(), user.getEmail(), false);
-//        user.setName(passwordEncoder.encode(user.getName()));
-
-        User result = userRepository.save(temp);
-
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentContextPath().path("/api/users/{name}")
-                .buildAndExpand(result.getName()).toUri();
-
-        return ResponseEntity.created(location).body(new ApiResponse(true, "User registered successfully"));
     }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

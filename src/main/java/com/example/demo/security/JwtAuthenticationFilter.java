@@ -2,32 +2,31 @@ package com.example.demo.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class JwtAuthenticationFilter extends GenericFilterBean {
+/**
+ * JWT 인증 프로세스의 시작점
+ */
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Private Variables
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    private JwtTokenProvider tokenProvider;
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtTokenUtil jwtTokenUtil;
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
@@ -37,9 +36,12 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
     | Constructor
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
-        this.tokenProvider = jwtTokenProvider;
+    public JwtAuthenticationFilter(CustomUserDetailsService userDetailsService, JwtTokenUtil jwtTokenUtil) {
+        this.userDetailsService = userDetailsService;
+        this.jwtTokenUtil = jwtTokenUtil;
+
     }
+
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Getter & Setter Method ( DI Method )
@@ -58,57 +60,20 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-        String jwt = resolveToken(httpServletRequest);
-        if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-            Authentication authentication = tokenProvider.getAuthentication(jwt);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+        String token = jwtTokenUtil.getJwtFromToken(request.getHeader("Authorization"));
+        // 토큰이 있고 validation 이 정상적으로 넘어갈 경우
+        if (StringUtils.hasText(token) && this.jwtTokenUtil.validateToken(token)) {
+            Authentication authentication = this.jwtTokenUtil.getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-        filterChain.doFilter(servletRequest, servletResponse);
-    }
 
-//    @Override
-//    protected void doFilter(HttpServletRequest request,
-//                                    HttpServletResponse response,
-//                                    FilterChain filterChain) throws ServletException, IOException {
-//        try {
-//            // 토큰 있냐?
-//            String jwt = getJwtFromRequest(request);
-//            // 있다면 토큰 유효성 체크
-//            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-//                // 토큰에서 이메일 정보 추출
-//                String email = tokenProvider.getUserEmailFromJWT(jwt);
-//
-//                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
-//                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-//                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-//
-//                SecurityContextHolder.getContext().setAuthentication(authentication);
-//            }
-//        } catch (Exception ex) {
-//            logger.error("Could not set user authentication in security context", ex);
-//        }
-//
-//        filterChain.doFilter(request, response);
-//    }
+        chain.doFilter(request, response);
+    }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | private Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
-
-    /**
-     * Header에 토큰을 가지고 있는지 확인
-     * @param request
-     * @return
-     */
-    private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7, bearerToken.length());
-        }
-        return null;
-    }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Private Method

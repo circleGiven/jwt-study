@@ -1,15 +1,10 @@
 package com.example.demo.security;
 
-import com.example.demo.domain.User;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class UserPrincipal implements UserDetails {
 
@@ -17,14 +12,14 @@ public class UserPrincipal implements UserDetails {
     | Private Variables
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    private String id;
+    private final String id;
 
-    private String name;
+    private final String name;
 
-    @JsonIgnore
-    private String email;
+    private final String email;
 
-    private Boolean adminFlag;
+    private final Collection<? extends GrantedAuthority> authorities;
+
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
@@ -34,11 +29,11 @@ public class UserPrincipal implements UserDetails {
     | Constructor
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    public UserPrincipal(String id, String name, String email, Boolean adminFlag) {
+    public UserPrincipal(String id, String name, String email, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.name = name;
         this.email = email;
-        this.adminFlag = adminFlag;
+        this.authorities = authorities;
     }
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -61,16 +56,6 @@ public class UserPrincipal implements UserDetails {
     | Public Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    public static UserPrincipal create(User user) {
-
-        return new UserPrincipal(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getAdminFlag()
-        );
-    }
-
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Implement Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
@@ -86,7 +71,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return authorities;
     }
 
     @Override

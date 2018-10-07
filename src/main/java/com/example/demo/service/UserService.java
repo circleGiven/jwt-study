@@ -1,26 +1,21 @@
-package com.example.demo.security;
+package com.example.demo.service;
 
 import com.example.demo.domain.User;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 데이터베이스에서 사용자 정보 조회하는 서비스
- */
+import java.util.List;
+
 @Service
-public class CustomUserDetailsService implements UserDetailsService {
+public class UserService {
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Private Variables
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     @Autowired
-    private UserRepository userRepository;
+    private UserRepository _userRepository;
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Public Variables
@@ -35,10 +30,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    | Public Method
-    |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
-
-    /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Implement Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
@@ -46,30 +37,53 @@ public class CustomUserDetailsService implements UserDetailsService {
     | Override Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    /**
-     * 사용자 이메일로 해당 사용자가 유효한지 조회
-     * @param userId
-     * @return
-     * @throws UsernameNotFoundException
-     */
-    @Override
-    @Transactional
-    public UserDetails loadUserByUsername(String userId)
-            throws UsernameNotFoundException {
-        User user = userRepository.findById(userId);
+    /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    | Public Method
+    |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-        if (user == null) {
-            throw new UsernameNotFoundException(String.format("No user found with userId '%s'.", userId));
+    /**
+     * Save user with email
+     * @param user {User}
+     * @return User
+     */
+    public User saveUser(User user) {
+        User userDetail = _userRepository.findByEmail(user.getEmail());
+        if (userDetail == null) {
+            userDetail = _userRepository.save(user);
         } else {
-            return JwtUserFactory.create(user);
+            userDetail = null;
         }
+        System.out.print("saved user --> " + userDetail);
+        return userDetail;
+
+    } // end of saveUserWithEmail
+
+    /**
+     * Fetch all users
+     * @return List<Users>
+     */
+    public List<User> getUsers() {
+        return _userRepository.findAll();
     }
 
+    /**
+     * Id로 사용자 조회
+     * @param id {String}
+     * @return User
+     */
+    public User getUserById(String id) {
+        return _userRepository.findById(id);
+    }
 
+    /**
+     * 이메일로 사용자 조회
+     * @param email
+     * @return
+     */
+    public User getUserByEmail(String email) {
+        return _userRepository.findByEmail(email);
+    }
 
-    /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    | private Method
-    |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
     /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     | Private Method

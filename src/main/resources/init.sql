@@ -1,2 +1,1 @@
-INSERT INTO role(name) VALUES('ROLE_USER');
-INSERT INTO role(name) VALUES('ROLE_ADMIN');
+INSERT INTO user (id, admin_flag, email, user_image_url, name) VALUES ('41dd8bb4-77e2-419f-ad6a-822e5cb0f826', false, 'circlegiven@exntu.com', null, '최원준');
