@@ -5,11 +5,10 @@ import com.example.demo.payload.JwtAuthenticationResponse;
 import com.example.demo.payload.Result;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenUtil;
+import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import java.net.URI;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -59,22 +58,28 @@ public class AuthController {
      * @param adminFlag
      * @return
      */
-//    @PostMapping("/signup")
-//    public Result registerUser(
-//            @RequestParam(value = "name") String name,
-//            @RequestParam(value = "email") String email,
-//            @RequestParam(value = "adminFlag") Boolean adminFlag) {
-//
-//        // Creating user's account
-//        User temp = new User(name, email, adminFlag);
-//        User result = userRepository.save(temp);
-//
-//        URI location = ServletUriComponentsBuilder
-//                .fromCurrentContextPath().path("/api/users/{name}")
-//                .buildAndExpand(result.getName()).toUri();
-//
-//        return ResponseEntity.created(location).body(new ApiResponse(true, "User registered successfully"));
-//    }
+    @PostMapping("/signup")
+    public Result registerUser(
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "email") String email,
+            @RequestParam(value = "adminFlag") Boolean adminFlag) {
+
+        // Creating user's account
+        User temp = new User(name, email, adminFlag);
+        User user = userRepository.save(temp);
+
+        Result result = new Result();
+        if (user != null) {
+            result.setCode(HttpStatus.SC_OK);
+            result.setMessage("사용자가 생성되었습니다.");
+        } else {
+            result.setCode(HttpStatus.SC_BAD_REQUEST);
+            result.setMessage("사용자 생성에 실패하였습니다.");
+        }
+
+
+        return result;
+    }
 
     /**
      * 토큰 재발급
