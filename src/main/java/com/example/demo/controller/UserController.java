@@ -72,7 +72,7 @@ public class UserController {
      * @return List<User>
      */
     @GetMapping(value="")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result getUsers(@RequestHeader(name = "Authorization") String authorization) {
 
         Result result = new Result();
