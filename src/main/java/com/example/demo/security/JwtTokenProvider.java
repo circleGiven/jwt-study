@@ -26,12 +26,15 @@ public class JwtTokenProvider {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
+    // JWT 암호화 key
     @Value("${app.jwtSecret}")
     private String jwtSecret;
 
+    // access token 만료시간
     @Value("${app.jwtExpirationInMs}")
     private int jwtExpirationInMs;
 
+    // refresh token 만료시간
     @Value("${app.jwtRefreshExpirationInMs}")
     private int jwtRefreshExpirationInMs;
 
@@ -51,11 +54,6 @@ public class JwtTokenProvider {
     | Public Method
     |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
-    @PostConstruct
-    public void init() {
-
-    }
-
     /**
      * 토큰 생성
      * @param authentication
@@ -64,30 +62,24 @@ public class JwtTokenProvider {
     public String generateToken(Authentication authentication) {
 
         String userEmail = (String) authentication.getPrincipal();
-
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        User user = null;
 
         Claims claim = Jwts.claims();
-//        claim.put("name", "test");
-        claim.put("email", userEmail);
-//        claim.put("token", userEmail);
-
+        claim.put("id", user.getId());
+        // 리프래시 토큰
+        claim.put("refresh_token", _generateRefreshToken(user));
 
         return Jwts.builder()
                 // JWT token에 내려줄 user 정보 설정
                 .setClaims(claim)
-//                .setSubject(userEmail)
+                .setSubject("access_token")
                 // token이 발급된 시간
                 .setIssuedAt(new Date())
                 // token 만료시간 설정
-                // 만료시간 을 길게잡도록
-                // 만료됬을경우 재발행을 하는지 로그인을 받는지 올바른 방법을 찾기
-                // 만약 특정 exception을 캐치하도록 찾아보기
-
-                .setExpiration(expiryDate)
+                .setExpiration(new Date(jwtExpirationInMs))
+                // 암호화
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
-                //
+                // 압축
                 .compact();
     }
 
@@ -104,48 +96,6 @@ public class JwtTokenProvider {
                     .collect(Collectors.toList());
         User principal = new User();
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
-    }
-
-    /**
-     * 토큰 생성
-     * @param user
-     * @param google_token
-     * @param google_refresh_token
-     * @return
-     */
-    public String createJWTToken(User user, String google_token, String google_refresh_token) {
-        // 토큰 정보
-        Claims claims = Jwts.claims();
-        // 사용자 아이디
-        claims.put("id", user.getId());
-        // 사용자 이메일
-        claims.put("email", user.getEmail());
-        // 사용자 이름
-        claims.put("name", user.getName());
-        // 사용자 어드민 권한 여부
-        claims.put("adminFl", user.getAdminFlag());
-        // 리프레시 토큰
-        claims.put("refresh_token", _generateRefreshToken(user, google_token, google_refresh_token));
-        // 구글 토큰이 있다면
-        if (google_token != null) {
-            claims.put("google_token", google_token);
-        }
-        // 구글 리프레시 토큰이 있다면
-        if (google_refresh_token != null) {
-            claims.put("google_refresh_token", google_refresh_token);
-        }
-
-        return Jwts.builder()
-                // JWT token에 내려줄 정보 설정
-                .setClaims(claims)
-                // 토큰의 이름 설정
-                .setSubject("access_token")
-                // token 만료시간
-                .setExpiration(new Date(jwtExpirationInMs))
-                // token 암호화
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
-                //
-                .compact();
     }
 
 
@@ -187,26 +137,6 @@ public class JwtTokenProvider {
     public String getUserEmailFromJWT(String token) {
         Claims claims = _getClaimsFromToken(token);
         return (String) claims.get("email");
-    }
-
-    /**
-     * 토큰에서 구글 토큰 얻기
-     * @param token
-     * @return
-     */
-    public String getGoogleTokenFromJWT(String token) {
-        Claims claims = _getClaimsFromToken(token);
-        return (String) claims.get("google_token");
-    }
-
-    /**
-     * 토큰에서 구글 리프래시 토큰 얻기
-     * @param token
-     * @return
-     */
-    public String getGoogleRefreshTokenFromJWT(String token) {
-        Claims claims = _getClaimsFromToken(token);
-        return (String) claims.get("google_refresh_token");
     }
 
     /**
@@ -259,24 +189,13 @@ public class JwtTokenProvider {
     /**
      * 리프레시 JWT token 생성
      * @param user
-     * @param google_token
-     * @param google_refresh_token
      * @return
      */
-    private String _generateRefreshToken(User user, String google_token, String google_refresh_token) {
+    private String _generateRefreshToken(User user) {
         // 토큰 정보
         Claims claims = Jwts.claims();
         // 사용자 아이디
         claims.put("id", user.getId());
-        // 구글 토큰이 있다면
-        if (google_token != null) {
-            claims.put("google_token", google_token);
-        }
-        // 구글 리프레시 토큰이 있다면
-        if (google_refresh_token != null) {
-            claims.put("google_refresh_token", google_refresh_token);
-        }
-
         return Jwts.builder()
                 // JWT token에 내려줄 정보 설정
                 .setClaims(claims)
@@ -286,7 +205,7 @@ public class JwtTokenProvider {
                 .setExpiration(new Date(jwtRefreshExpirationInMs))
                 // token 암호화
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
-                //
+                // 압축
                 .compact();
     }
 
